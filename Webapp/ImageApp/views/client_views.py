@@ -2,6 +2,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated # Yêu cầu user phải login mới được truy cập vào API
 
 # JWT
 from rest_framework_simplejwt.tokens import AccessToken
@@ -69,4 +70,24 @@ class ClientResetPasswordAPIView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Email not found!'}, status=status.HTTP_404_NOT_FOUND)
 
-# Nếu cần thêm chỉnh sửa hoặc tối ưu, cứ thoải mái báo mình nhé! 🚀
+# API Xem thông tin người dùng
+class ClientViewUserInfoAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Kiểm tra access token hợp lệ
+
+    def post(self, request):
+        user = request.user  # Lấy người dùng từ access token đã xác thực
+        
+        # Kiểm tra xem người dùng có tồn tại không
+        if not user:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(user)
+
+        # Trả về thông tin người dùng: tên và email
+        return Response(
+            {
+                "name": serializer.data['name'],
+                "email": serializer.data['email']
+            },
+            status=status.HTTP_200_OK
+        )
